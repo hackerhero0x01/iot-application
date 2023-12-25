@@ -1,0 +1,57 @@
+name: Demo Environment Deployment
+
+run-name: Demo environment deployment action initiated by ${{ github.actor }}
+
+on:
+  push:
+    branches: [main, rc]
+  workflow_dispatch:
+
+# Ensures that only one deployment is in progress
+concurrency: ${{ github.workflow }}-${{github.ref_name}}
+
+jobs:
+  deploy:
+    timeout-minutes: 60
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write # needed to interact with GitHub's OIDC Token endpoint
+      contents: read
+    outputs:
+      app_url: ${{ steps.app_url.outputs.app_url }}
+
+    steps:
+      - name: Checkout 🛎️
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+
+      - name: Install Java 🔧
+        uses: actions/setup-java@v4
+        with:
+          distribution: corretto
+          java-version: 17
+
+      - name: Install Node.js 🔧
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18
+          cache: yarn
+
+      - name: Install Dependencies 🔩
+        run: yarn install --frozen-lockfile
+
+      - name: Configure AWS credentials 🔑
+        uses: aws-actions/configure-aws-credentials@v3
+        with:
+          role-to-assume: ${{ secrets.DEPLOYMENT_AWS_ROLE }}
+          aws-region: us-west-2
+
+      - name: Deploy CDK 🚀
+        run: yarn workspace cdk cdk deploy --all --require-approval never -c stackName=IotApp-${{github.ref_name}}
+
+      - name: Get App URL 🔗
+        id: app_url
+        run: |
+          app_url=$(aws cloudformation describe-stacks --stack-name IotApp-${{github.ref_name}} --query "Stacks[0].Outputs[?OutputKey=='AppURL'].OutputValue" --output text)
+          echo "app_url=$app_url" >> $GITHUB_OUTPUT

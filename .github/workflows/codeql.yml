@@ -1,0 +1,33 @@
+name: CodeQL
+
+run-name: CodeQL action initiated by ${{ github.actor }}
+
+on:
+  push:
+    branches: [main, rc]
+  pull_request:
+    branches: [main, rc]
+  schedule:
+    - cron: '26 3 * * 0'
+
+jobs:
+  analyze:
+    timeout-minutes: 10
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout 🛎️
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+
+      - name: Initialize CodeQL 🫣
+        uses: github/codeql-action/init@v2
+        with:
+          languages: javascript
+
+      - name: Autobuild 🤖
+        uses: github/codeql-action/autobuild@v2
+
+      - name: Perform CodeQL Analysis 🔬
+        uses: github/codeql-action/analyze@v2

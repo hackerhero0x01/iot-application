@@ -1,0 +1,19 @@
+{
+  "$schema": "https://json.schemastore.org/tsconfig",
+  "compilerOptions": {
+    "baseUrl": "./",
+    "jsx": "react-jsx",
+    "lib": ["dom", "dom.iterable", "es2020"],
+    "outDir": "./dist",
+    "module": "es2020",
+    "rootDir": "./src",
+    "types": ["vitest/importMeta"],
+    "paths": {
+      "~/*": ["src/*"]
+    }
+  },
+  "display": "Client",
+  "exclude": ["node_modules"],
+  "extends": "tsconfig/base.json",
+  "include": ["src", "src/test/setup.ts"]
+}

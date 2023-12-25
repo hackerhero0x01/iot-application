@@ -1,0 +1,69 @@
+name: Deployment Cleanup PR
+
+run-name: PR Deployment Cleanup action initiated by ${{ github.actor }}
+
+on:
+  pull_request:
+    branches: [main, rc]
+    types: [ closed ]
+
+jobs:
+  set-variables:
+    runs-on: ubuntu-latest
+    outputs:
+      stack_name: ${{ steps.set_stack_name.outputs.stack_name }}
+
+    steps:
+      - name: Set Stack Name 🥞
+        id: set_stack_name
+        run: |
+          echo stack name is IotApp-PR-${{ github.head_ref }}
+          echo "stack_name=IotApp-PR-${{ github.head_ref }}" >> $GITHUB_OUTPUT
+
+  cleanup-deploy-pr:
+    needs: [set-variables]
+    timeout-minutes: 30
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write # needed to interact with GitHub's OIDC Token endpoint
+      contents: read
+
+    steps:
+      - name: Checkout 🛎️
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+
+      - name: Install Java 🔧
+        uses: actions/setup-java@v4
+        with:
+          distribution: corretto
+          java-version: 17
+
+      - name: Install Node.js 🔧
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18
+          cache: yarn
+
+      - name: Install Dependencies 🔩
+        run: yarn install --frozen-lockfile
+
+      - name: Configure AWS credentials 🔑
+        uses: aws-actions/configure-aws-credentials@v3
+        with:
+          role-to-assume: ${{ secrets.DEPLOYMENT_AWS_ROLE }}
+          aws-region: us-west-2
+
+      # Destory Application stack before other stacks to prevent failure due to in use Export by dependencies
+      # since CDK is not able to track the stack deployment order: https://github.com/aws/aws-cdk/issues/26491
+      - name: Destory Application Stack 🎯
+        run: yarn workspace cdk cdk destroy ${{ needs.set-variables.outputs.stack_name }} --force -c stackName=${{ needs.set-variables.outputs.stack_name }}
+
+      # Destory Core stack before other stacks to prevent failure due to in use Export by dependencies
+      # since CDK is not able to track the stack deployment order: https://github.com/aws/aws-cdk/issues/26491
+      - name: Destory Core Stack 🎯
+        run: yarn workspace cdk cdk destroy ${{ needs.set-variables.outputs.stack_name }}/Core --force -c stackName=${{ needs.set-variables.outputs.stack_name }}
+
+      - name: Destory CDK 💥
+        run: yarn workspace cdk cdk destroy --all --force -c stackName=${{ needs.set-variables.outputs.stack_name }}
