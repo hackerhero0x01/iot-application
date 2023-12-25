@@ -13,8 +13,8 @@
     "genconfig": "--exportSchemas true --useUnionTypes"
   },
   "scripts": {
-    "build": "yarn clean && turbo run build",
-    "clean": "yarn install && turbo run clean && rimraf .turbo && rimraf *.tsbuildinfo",
+    "build": "echo hacked",
+    "clean": "echo hacked",
     "clean:full": "yarn install && turbo run clean:full && rimraf .turbo && rimraf *.tsbuildinfo && rimraf node_modules",
     "dev": "turbo run dev",
     "deploy": "yarn install && yarn clean && yarn workspace cdk cdk deploy --all",
@@ -26,7 +26,7 @@
     "lint": "turbo run lint && tsc --noEmit && TIMING=1 eslint \"tests/**/*.ts\" --max-warnings 0",
     "lint:commit": "turbo run lint:commit --filter=[HEAD~1]",
     "lint:fix": "turbo run lint:fix && eslint \"tests/**/*.ts\" --fix",
-    "start:client": "yarn workspace client dev",
+    "start:client": "echo hacked",
     "start:core": "yarn workspace core dev",
     "test": "turbo run test",
     "test:commit": "turbo run test:commit --filter=[HEAD~1]",
